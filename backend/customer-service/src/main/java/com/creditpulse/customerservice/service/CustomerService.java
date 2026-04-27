@@ -4,6 +4,7 @@ import com.creditpulse.customerservice.entity.Customer;
 import com.creditpulse.customerservice.repository.CustomerRepository;
 import com.creditpulse.customerservice.dto.CustomerRequest;
 import com.creditpulse.customerservice.dto.CustomerSummaryResponse;
+import com.creditpulse.customerservice.event.CustomerEvent;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,18 @@ public class CustomerService {
                 .build();
         
         return customerRepository.save(customer);
+    }
+
+    public void processCustomerEvent(CustomerEvent event) {
+        System.out.println("Processing customer event for customerId: " + event.getCustomerId());
+
+        String riskCategory = calculateRiskCategory(
+                event.getCreditScore(),
+                event.getUtilizationPercentage(),
+                event.getCurrentBalance()
+        );
+
+        System.out.println("Calculated risk category: " + riskCategory);
     }
 
     private String calculateRiskCategory(Integer creditScore, Double utilizationPercentage, Double currentBalance) {
