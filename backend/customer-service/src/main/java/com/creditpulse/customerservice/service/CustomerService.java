@@ -40,8 +40,10 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
+    @CacheEvict(value = "customers", allEntries = true)
     public void processCustomerEvent(CustomerEvent event) {
-        System.out.println("Processing customer event for customerId: " + event.getCustomerId());
+        Customer customer = customerRepository.findByCustomerId(event.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found with customerId: " + event.getCustomerId()));
 
         String riskCategory = calculateRiskCategory(
                 event.getCreditScore(),
@@ -49,7 +51,15 @@ public class CustomerService {
                 event.getCurrentBalance()
         );
 
-        System.out.println("Calculated risk category: " + riskCategory);
+        customer.setCreditScore(event.getCreditScore());
+        customer.setCurrentBalance(event.getCurrentBalance());
+        customer.setUtilizationPercentage(event.getUtilizationPercentage());
+        customer.setRiskCategory(riskCategory);
+
+        customerRepository.save(customer);
+
+        System.out.println("Updated customer risk from Kafka event. customerId: "
+                + event.getCustomerId() + ", riskCategory: " + riskCategory);
     }
 
     private String calculateRiskCategory(Integer creditScore, Double utilizationPercentage, Double currentBalance) {
